@@ -1,1 +1,1969 @@
-Hello world 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>БАНКИНГ — Управляй активами и пассивами</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #FFFFFF;
+    --fg: #0A0A0A;
+    --muted: #707070;
+    --line: #E5E5E5;
+    --line-mid: #C0C0C0;
+    --line-strong: #0A0A0A;
+    --soft: #F5F5F5;
+    --player: #E30613;
+    --player-soft: #FFE5E7;
+    --bot1: #1747A3;
+    --bot2: #0F7A48;
+    --bot3: #D85800;
+    --positive: #0F7A48;
+    --negative: #E30613;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Menlo', monospace;
+}
+
+html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    min-height: 100vh;
+}
+
+body {
+    padding: 20px;
+    background-image:
+        linear-gradient(to right, transparent calc(100% - 1px), rgba(0,0,0,0.025) calc(100% - 1px)),
+        linear-gradient(to bottom, transparent calc(100% - 1px), rgba(0,0,0,0.025) calc(100% - 1px));
+    background-size: 64px 64px;
+}
+
+.app {
+    max-width: 1180px;
+    margin: 0 auto;
+    background: var(--bg);
+    border: 2px solid var(--fg);
+    padding: 0;
+    position: relative;
+}
+
+/* Top utility bar */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--fg);
+    padding: 14px 24px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: var(--fg);
+    color: white;
+}
+
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.topbar-brand { font-weight: 800; letter-spacing: 0.12em; }
+.topbar-brand .dot { color: var(--player); }
+.topbar-tag { opacity: 0.5; font-weight: 400; }
+
+.topbar-stats { display: flex; gap: 24px; }
+.topbar-stat { display: flex; gap: 6px; }
+.topbar-stat-label { opacity: 0.55; }
+.topbar-stat-value { font-weight: 700; }
+.topbar-stat-value.pos { color: #67D49C; }
+.topbar-stat-value.neg { color: #FF7780; }
+
+/* Cycle progress strip */
+.cycle-strip {
+    display: flex;
+    border-bottom: 1px solid var(--line);
+}
+.cycle-tick {
+    flex: 1;
+    height: 5px;
+    background: var(--line);
+    border-right: 1px solid var(--bg);
+}
+.cycle-tick:last-child { border-right: none; }
+.cycle-tick.done { background: var(--player); }
+.cycle-tick.active { background: var(--fg); }
+
+/* Main content area */
+.content { padding: 32px; }
+
+/* Section labels */
+.label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+.label::before {
+    content: '';
+    width: 8px; height: 8px;
+    background: var(--fg);
+    display: inline-block;
+}
+.label.accent::before { background: var(--player); }
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--fg);
+    color: white;
+    border: 2px solid var(--fg);
+    padding: 16px 28px;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.08s, background 0.15s, color 0.15s;
+}
+.btn:hover { background: white; color: var(--fg); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; background: var(--fg); color: white; }
+
+.btn-primary { background: var(--player); border-color: var(--player); }
+.btn-primary:hover { background: white; color: var(--player); }
+
+.btn-ghost { background: white; color: var(--fg); }
+.btn-ghost:hover { background: var(--fg); color: white; }
+
+.btn .arrow { font-size: 16px; line-height: 1; }
+
+/* ==================== START SCREEN ==================== */
+
+.start-hero {
+    padding: 64px 32px 48px;
+    text-align: center;
+    border-bottom: 1px dashed var(--line-mid);
+    position: relative;
+}
+.start-hero::before {
+    content: 'ROYAL BANK • TRADING TERMINAL • V1.0';
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+}
+
+.start-title {
+    font-weight: 800;
+    font-size: clamp(42px, 9vw, 88px);
+    letter-spacing: -0.04em;
+    line-height: 0.92;
+    margin-bottom: 20px;
+}
+.start-title .red { color: var(--player); }
+.start-title .slash { color: var(--muted); font-weight: 400; }
+
+.start-tagline {
+    font-size: 14px;
+    color: var(--muted);
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.6;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.start-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+
+.start-panel {
+    padding: 32px;
+}
+.start-panel + .start-panel { border-left: 1px dashed var(--line-mid); }
+
+.input-row { margin-bottom: 24px; }
+
+.input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--line-strong);
+    background: white;
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--fg);
+    outline: none;
+}
+.input:focus { background: var(--soft); }
+
+.cycle-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 2px solid var(--line-strong);
+}
+.cycle-options .cycle-opt {
+    padding: 18px 8px;
+    text-align: center;
+    cursor: pointer;
+    background: white;
+    border-right: 1px solid var(--line-strong);
+    transition: background 0.1s;
+}
+.cycle-options .cycle-opt:last-child { border-right: none; }
+.cycle-options .cycle-opt:hover { background: var(--soft); }
+.cycle-options .cycle-opt.selected { background: var(--player); color: white; }
+
+.cycle-opt-num { font-size: 28px; font-weight: 800; line-height: 1; }
+.cycle-opt-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; opacity: 0.7; }
+
+.start-footer {
+    display: flex;
+    gap: 8px;
+    margin-top: 32px;
+}
+.start-footer .btn { flex: 1; }
+
+.lb-mini-empty {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    padding: 32px 16px;
+    border: 1px dashed var(--line-mid);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.lb-mini { border: 2px solid var(--line-strong); }
+.lb-mini-row {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+}
+.lb-mini-row:last-child { border-bottom: none; }
+.lb-mini-row.gold { background: var(--player); color: white; }
+.lb-mini-row .rank { font-weight: 700; opacity: 0.6; }
+.lb-mini-row .name { font-weight: 500; }
+.lb-mini-row .pf { font-weight: 700; }
+
+/* ==================== NEWS SCREEN ==================== */
+
+.headline {
+    margin-bottom: 24px;
+}
+.headline-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.headline-meta .day { color: var(--player); font-weight: 700; }
+.headline-title {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+}
+
+.news-grid {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 0;
+    border: 2px solid var(--line-strong);
+    margin-bottom: 24px;
+}
+
+.news-rate {
+    padding: 28px;
+    border-right: 1px solid var(--line-strong);
+    background: var(--soft);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 220px;
+}
+
+.news-rate-top { display: flex; justify-content: space-between; align-items: flex-start; }
+
+.news-rate-value {
+    font-size: 88px;
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    margin: 18px 0 12px;
+}
+.news-rate-unit { font-size: 36px; color: var(--muted); margin-left: 6px; }
+
+.news-rate-change {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border: 1px solid var(--line-strong);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.news-rate-change.up { background: var(--negative); color: white; border-color: var(--negative); }
+.news-rate-change.down { background: var(--positive); color: white; border-color: var(--positive); }
+.news-rate-change.same { background: white; }
+
+.news-event {
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.news-event-top { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.news-event-icon {
+    font-size: 26px;
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--fg);
+}
+.news-event-title { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; }
+
+.news-event-desc { font-size: 14px; color: var(--muted); line-height: 1.55; margin-bottom: 18px; }
+
+.news-event-impact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+}
+.impact-cell { padding: 0 12px; border-right: 1px dashed var(--line); }
+.impact-cell:last-child { border-right: none; padding-right: 0; }
+.impact-cell:first-child { padding-left: 0; }
+.impact-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.impact-value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+.impact-value.pos { color: var(--positive); }
+.impact-value.neg { color: var(--negative); }
+
+/* ==================== PREPARATION SCREEN ==================== */
+
+.prep-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.rate-control {
+    border: 2px solid var(--line-strong);
+    padding: 24px;
+    background: white;
+    position: relative;
+}
+.rate-control.deposit { border-color: var(--line-strong); }
+.rate-control.loan { border-color: var(--line-strong); }
+
+.rate-control-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+}
+.rate-control-title { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+.rate-control-range { font-size: 11px; color: var(--muted); }
+
+.rate-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 0 18px;
+}
+.rate-btn {
+    width: 52px; height: 52px;
+    border: 2px solid var(--line-strong);
+    background: white;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 22px;
+    cursor: pointer;
+    transition: background 0.1s;
+    display: flex; align-items: center; justify-content: center;
+}
+.rate-btn:hover:not(:disabled) { background: var(--fg); color: white; }
+.rate-btn:active:not(:disabled) { transform: translateY(1px); }
+.rate-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+.rate-value {
+    font-weight: 800;
+    font-size: 56px;
+    letter-spacing: -0.03em;
+    min-width: 180px;
+    text-align: center;
+    line-height: 1;
+}
+.rate-value-unit { font-size: 24px; color: var(--muted); margin-left: 4px; }
+
+.rate-meta {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.rate-meta strong { color: var(--fg); font-weight: 700; }
+
+.rate-bar {
+    margin-top: 14px;
+    height: 6px;
+    background: var(--line);
+    position: relative;
+}
+.rate-bar-fill {
+    height: 100%;
+    background: var(--fg);
+    transition: width 0.2s ease;
+}
+.rate-control.deposit .rate-bar-fill { background: var(--bot1); }
+.rate-control.loan .rate-bar-fill { background: var(--player); }
+
+.forecast {
+    border: 2px solid var(--fg);
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    background: var(--fg);
+    color: white;
+    margin-bottom: 16px;
+}
+.forecast-cell {
+    padding-right: 24px;
+    border-right: 1px solid rgba(255,255,255,0.15);
+}
+.forecast-cell:last-child { border-right: none; padding-right: 0; }
+.forecast-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.55; margin-bottom: 6px; }
+.forecast-value { font-size: 24px; font-weight: 800; line-height: 1; }
+.forecast-value.pos { color: #67D49C; }
+.forecast-value.neg { color: #FF7780; }
+
+.hint {
+    border: 1px dashed var(--line-mid);
+    padding: 14px 18px;
+    background: var(--soft);
+    margin-bottom: 24px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--muted);
+}
+.hint-icon {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border: 1.5px solid var(--fg);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    color: var(--fg);
+    font-size: 12px;
+}
+.hint strong { color: var(--fg); }
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+.actions .btn-primary { flex: 1; }
+
+.margin-warning {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border: 2px solid var(--negative);
+    background: rgba(217, 36, 53, 0.06);
+    color: var(--negative);
+    font-size: 12px;
+    line-height: 1.4;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-weight: 600;
+}
+.margin-warning-icon {
+    flex-shrink: 0;
+    width: 20px; height: 20px;
+    background: var(--negative);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 13px;
+}
+
+/* ==================== WORKING DAY ==================== */
+
+.work-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    border: 2px solid var(--fg);
+    background: var(--fg);
+    color: white;
+    margin-bottom: 12px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.work-status-left { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.work-status-dot {
+    width: 10px; height: 10px;
+    background: #67D49C;
+    border-radius: 50%;
+    animation: pulse 1.2s infinite ease-in-out;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+.work-status-phase { opacity: 0.7; font-size: 11px; }
+.work-status.done .work-status-left { display: none; }
+.work-status.done { justify-content: center; }
+.work-status.done .work-status-phase { opacity: 1; font-size: 13px; font-weight: 800; letter-spacing: 0.18em; }
+
+.banks-table {
+    border: 2px solid var(--fg);
+    margin-bottom: 16px;
+}
+.banks-thead {
+    display: grid;
+    grid-template-columns: 220px 1fr 1fr 130px;
+    background: var(--soft);
+    padding: 10px 16px;
+    gap: 16px;
+    border-bottom: 2px solid var(--fg);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+}
+.banks-thead .center { text-align: left; }
+.banks-thead .right { text-align: right; }
+
+.bank-row {
+    display: grid;
+    grid-template-columns: 220px 1fr 1fr 130px;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+    align-items: center;
+    transition: background 0.2s;
+}
+.bank-row:last-child { border-bottom: none; }
+.bank-row.player { background: var(--player-soft); }
+
+.bank-id { display: flex; align-items: center; gap: 12px; }
+.bank-marker {
+    width: 8px;
+    align-self: stretch;
+    min-height: 36px;
+}
+.bank-marker.player { background: var(--player); }
+.bank-marker.bot1 { background: var(--bot1); }
+.bank-marker.bot2 { background: var(--bot2); }
+.bank-marker.bot3 { background: var(--bot3); }
+
+.bank-id-text { display: flex; flex-direction: column; gap: 2px; }
+.bank-name { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; }
+.bank-name .you { color: var(--player); margin-left: 4px; font-size: 10px; letter-spacing: 0.1em; }
+.bank-strategy { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+.metric-block { display: flex; flex-direction: column; gap: 6px; }
+.metric-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.metric-rate { font-size: 11px; color: var(--muted); }
+.metric-rate strong { color: var(--fg); font-weight: 700; font-size: 13px; }
+.metric-vol { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 70px; text-align: right; }
+.metric-rank {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+}
+.bank-row.player .metric-rank { color: var(--player); font-weight: 600; }
+
+.progress {
+    height: 8px;
+    background: var(--line);
+    overflow: hidden;
+    position: relative;
+}
+.progress-fill {
+    height: 100%;
+    width: 0;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bank-row.player .progress-fill.deposit-fill { background: var(--player); }
+.bank-row.player .progress-fill.loan-fill { background: var(--player); }
+.bank-row[data-color="bot1"] .progress-fill { background: var(--bot1); }
+.bank-row[data-color="bot2"] .progress-fill { background: var(--bot2); }
+.bank-row[data-color="bot3"] .progress-fill { background: var(--bot3); }
+
+.bank-profit {
+    text-align: right;
+    font-size: 18px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    transition: opacity 0.4s, transform 0.4s;
+}
+.bank-profit-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+.bank-profit-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+.bank-profit.hidden { opacity: 0; transform: translateY(4px); }
+.bank-profit.pos { color: var(--positive); }
+.bank-profit.neg { color: var(--negative); }
+
+.bank-row[data-rank="1"] .bank-profit-cell .bank-profit::before { content: '🏆 '; font-size: 14px; }
+
+.work-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 2px solid var(--fg);
+    margin-bottom: 16px;
+}
+.work-summary-cell {
+    padding: 14px 18px;
+    border-right: 1px solid var(--line-strong);
+}
+.work-summary-cell:last-child { border-right: none; }
+.work-summary-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+.work-summary-value { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.work-summary-value.pos { color: var(--positive); }
+.work-summary-value.neg { color: var(--negative); }
+
+/* ==================== FINAL SCREEN ==================== */
+
+.final-hero {
+    text-align: center;
+    padding: 56px 32px 40px;
+    border-bottom: 2px solid var(--fg);
+}
+.final-hero-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin-bottom: 12px;
+}
+.final-hero-value {
+    font-size: clamp(56px, 14vw, 128px);
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+}
+.final-hero-value.pos { color: var(--positive); }
+.final-hero-value.neg { color: var(--negative); }
+.final-hero-sub { margin-top: 12px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-bottom: 2px solid var(--fg);
+}
+.stat-cell {
+    padding: 24px;
+    border-right: 1px solid var(--line);
+}
+.stat-cell:last-child { border-right: none; }
+.stat-cell-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+.stat-cell-value { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.stat-cell-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+.final-section { padding: 32px; border-bottom: 1px solid var(--line); }
+.final-section:last-child { border-bottom: none; }
+.final-section h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 16px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.final-section h2::before {
+    content: '';
+    width: 8px; height: 8px;
+    background: var(--player);
+}
+
+.dt {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.dt th, .dt td {
+    padding: 11px 14px;
+    text-align: right;
+    border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+}
+.dt th {
+    background: var(--soft);
+    text-transform: uppercase;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    border-bottom: 2px solid var(--fg);
+}
+.dt td:first-child, .dt th:first-child { text-align: left; }
+.dt tr.player-row { background: var(--player-soft); font-weight: 700; }
+.dt .pos { color: var(--positive); font-weight: 700; }
+.dt .neg { color: var(--negative); font-weight: 700; }
+.dt .rank-medal { font-weight: 800; }
+
+.lb {
+    border: 2px solid var(--fg);
+}
+.lb-row {
+    display: grid;
+    grid-template-columns: 50px 1fr 110px 70px 90px;
+    gap: 12px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    align-items: center;
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row.head {
+    background: var(--fg);
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 10px;
+    font-weight: 700;
+}
+.lb-row.you { background: var(--player-soft); font-weight: 700; }
+.lb-row .rank-num { font-weight: 800; color: var(--muted); }
+.lb-row .rank-num.gold { color: var(--player); }
+.lb-row .rank-num.silver { color: var(--bot1); }
+.lb-row .rank-num.bronze { color: var(--bot3); }
+.lb-row .pf-amount { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lb-row .pf-cycles { text-align: right; color: var(--muted); font-size: 11px; }
+.lb-row .pf-date { text-align: right; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+/* fade utilities */
+.fade-in { animation: fadeIn 0.45s ease both; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--line-mid);
+    border-radius: 2px;
+    background: var(--soft);
+    font-size: 11px;
+    color: var(--muted);
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 820px) {
+    body { padding: 0; }
+    .app { border: none; }
+    .topbar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; font-size: 11px; }
+    .topbar-stats { gap: 14px; }
+    .content { padding: 20px 16px; }
+    .start-hero { padding: 40px 16px 32px; }
+    .start-hero::before { display: none; }
+    .start-body { grid-template-columns: 1fr; }
+    .start-panel + .start-panel { border-left: none; border-top: 1px dashed var(--line-mid); }
+    .news-grid { grid-template-columns: 1fr; }
+    .news-rate { border-right: none; border-bottom: 1px solid var(--line-strong); min-height: 0; }
+    .news-rate-value { font-size: 64px; }
+    .prep-grid { grid-template-columns: 1fr; }
+    .rate-value { font-size: 42px; min-width: 130px; }
+    .rate-btn { width: 46px; height: 46px; font-size: 20px; }
+    .forecast { grid-template-columns: 1fr; gap: 14px; }
+    .forecast-cell { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.15); padding: 0 0 14px; }
+    .forecast-cell:last-child { border-bottom: none; padding-bottom: 0; }
+    .actions { flex-direction: column-reverse; }
+    .actions .btn { width: 100%; }
+    .banks-thead { display: none; }
+    .bank-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 16px;
+    }
+    .bank-id { gap: 10px; }
+    .bank-marker { width: 6px; min-height: 28px; }
+    .metric-block { padding-left: 18px; border-left: 1px dashed var(--line); }
+    .bank-profit-cell { align-items: flex-start; padding-left: 18px; border-left: 1px dashed var(--line); }
+    .bank-profit { text-align: left; }
+    .work-summary { grid-template-columns: 1fr 1fr; }
+    .work-summary-cell:nth-child(2) { border-right: none; }
+    .work-summary-cell:nth-child(1), .work-summary-cell:nth-child(2) { border-bottom: 1px solid var(--line-strong); }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .stat-cell:nth-child(2) { border-right: none; }
+    .stat-cell:nth-child(1), .stat-cell:nth-child(2) { border-bottom: 1px solid var(--line); }
+    .final-section { padding: 24px 16px; }
+    .dt { font-size: 11px; }
+    .dt th, .dt td { padding: 8px 6px; }
+    .lb-row { grid-template-columns: 32px 1fr 90px 70px; gap: 8px; padding: 10px 12px; font-size: 12px; }
+    .lb-row .pf-cycles { display: none; }
+    .lb-row .pf-amount { text-align: right; }
+    .lb-row .pf-date { font-size: 10px; }
+    .start-title { font-size: 48px; }
+    .headline-title { font-size: 26px; }
+    .start-footer { flex-direction: column; }
+}
+
+/* ===== Number transitions ===== */
+.num-anim { transition: color 0.3s; }
+
+</style>
+</head>
+<body>
+<div id="app" class="app"></div>
+
+<script>
+'use strict';
+
+/* ====================================================================
+   GAME DATA
+   ==================================================================== */
+
+const BASE_VOLUME = 2000;             // млн руб., базовый объём рынка
+const SHARES = [0.40, 0.30, 0.20, 0.10]; // распределение долей по местам
+const CYCLE_OPTIONS = [5, 10, 15];
+const RATE_STEP = 0.5;
+const DEPOSIT_OFFSET_RANGE = [-4.0, 0.0];   // относительно КС
+const LOAN_OFFSET_RANGE = [0.0, 4.0];       // относительно КС
+const LB_KEY = 'banking_sim_leaderboard_v1';
+
+const EVENTS = [
+    {
+        id: 'sunny', icon: '☀', title: 'Солнечно и стабильно',
+        desc: 'Спокойный день на финансовых рынках. Клиенты ведут себя предсказуемо, объёмы сохраняются на базовом уровне.',
+        depositMul: 1.00, loanMul: 1.00
+    },
+    {
+        id: 'blackfriday', icon: '◆', title: 'Чёрная пятница',
+        desc: 'Покупательский ажиотаж в торговых сетях. Спрос на потребительские кредиты резко вырос, но клиенты тратят, а не сберегают.',
+        depositMul: 0.85, loanMul: 1.30
+    },
+    {
+        id: 'tariffs', icon: '▲', title: 'Новые тарифы регулятора',
+        desc: 'Регулятор ужесточил требования к банковскому сектору. Рынок стал осторожнее по обоим направлениям.',
+        depositMul: 0.85, loanMul: 0.85
+    },
+    {
+        id: 'bonus', icon: '★', title: 'Сезон бонусов',
+        desc: 'Корпоративные премии увеличили объём свободных средств у населения. Депозиты растут — кредитный спрос охлаждается.',
+        depositMul: 1.30, loanMul: 0.90
+    },
+    {
+        id: 'unemployment', icon: '▽', title: 'Рост безработицы',
+        desc: 'Экономическая нестабильность снижает доверие. Клиенты экономят и боятся брать кредиты, рынки сжимаются.',
+        depositMul: 0.80, loanMul: 0.70
+    }
+];
+
+// Стратегии ботов по ТЗ. Сдвиги (offset) задаются относительно КС.
+// Логика: «дорогие/дешёвые» в банковской терминологии — взгляд банка.
+// Дорогие вклады (для банка) = высокие ставки депозитов = ближе к КС.
+// Дешёвые вклады = низкие ставки депозитов = далеко вниз от КС.
+const STRATEGIES = [
+    {
+        id: 'aggressive', name: 'Агрессивный рост',
+        // Дорогие кредиты (>КС+1%) и дорогие вклады (близкие к КС)
+        depositOffsetRange: [-1.0, 0.0],
+        loanOffsetRange:    [2.5, 4.0]
+    },
+    {
+        id: 'conservative', name: 'Консервативный',
+        // Дешёвые кредиты (<КС+0.5%) и дешёвые вклады
+        depositOffsetRange: [-2.5, -1.5],
+        loanOffsetRange:    [0.0, 1.0]
+    },
+    {
+        id: 'marginal', name: 'Маржинальный',
+        // Дешёвые вклады (<КС-1%) и дорогие кредиты (>КС+1%)
+        depositOffsetRange: [-4.0, -2.5],
+        loanOffsetRange:    [2.0, 3.5]
+    }
+];
+
+const BOTS = [
+    { id: 'bot1', name: 'Бетта-банк',  color: 'bot1' },
+    { id: 'bot2', name: 'Кредитбанк',  color: 'bot2' },
+    { id: 'bot3', name: 'Промбанк',    color: 'bot3' }
+];
+
+/* ====================================================================
+   STATE
+   ==================================================================== */
+
+let state = createState();
+
+function createState() {
+    return {
+        screen: 'start',
+        playerName: 'Royal Bank',
+        cycles: 5,
+        currentCycle: 0,
+        keyRate: 10,
+        prevKeyRate: 10,
+        event: null,
+        depositOffset: 0.0, // выбранный пользователем сдвиг относительно КС
+        loanOffset: 0.0,
+        bots: [],
+        cycleResult: null,
+        history: [],
+        totals: { profit: 0, depositVol: 0, loanVol: 0, marginSum: 0, marginCount: 0 },
+        animationTimers: [],
+        animationDone: false
+    };
+}
+
+function clearTimers() {
+    state.animationTimers.forEach(t => clearTimeout(t));
+    state.animationTimers = [];
+}
+
+/* ====================================================================
+   UTIL
+   ==================================================================== */
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const fmt = (n, frac = 0) => {
+    const v = Number(n);
+    return v.toLocaleString('ru-RU', { minimumFractionDigits: frac, maximumFractionDigits: frac });
+};
+const fmtSigned = (n, frac = 0) => (n >= 0 ? '+' : '') + fmt(n, frac);
+const fmtRate = (n) => n.toFixed(1) + '%';
+const fmtRateSigned = (n) => (n >= 0 ? '+' : '') + n.toFixed(1);
+const clamp = (v, mn, mx) => Math.max(mn, Math.min(mx, v));
+const round05 = (v) => Math.round(v * 2) / 2;
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function formatLBDate(iso) {
+    // ISO date 'YYYY-MM-DD' → 'DD.MM.YY'
+    if (!iso || typeof iso !== 'string') return '—';
+    const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return iso;
+    return `${m[3]}.${m[2]}.${m[1].slice(2)}`;
+}
+
+/* ====================================================================
+   GAME LOGIC
+   ==================================================================== */
+
+function rollKeyRate(prev, isFirst) {
+    if (isFirst) return round05(5 + Math.random() * 10); // 5..15
+    const change = (Math.random() - 0.5) * 4; // -2..+2 п.п.
+    return round05(clamp(prev + change, 5, 15));
+}
+
+function rollEvent() {
+    return EVENTS[Math.floor(Math.random() * EVENTS.length)];
+}
+
+function rollBots(playerDepOffset, playerLoanOffset) {
+    // Случайно перемешиваем стратегии: каждая уникально достаётся одному боту
+    const strategies = [...STRATEGIES].sort(() => Math.random() - 0.5);
+    const takenDep = new Set([round05(playerDepOffset)]);
+    const takenLoan = new Set([round05(playerLoanOffset)]);
+
+    return BOTS.map((bot, i) => {
+        const s = strategies[i];
+        let dep = round05(s.depositOffsetRange[0] + Math.random() * (s.depositOffsetRange[1] - s.depositOffsetRange[0]));
+        let loan = round05(s.loanOffsetRange[0] + Math.random() * (s.loanOffsetRange[1] - s.loanOffsetRange[0]));
+
+        dep = clamp(dep, DEPOSIT_OFFSET_RANGE[0], DEPOSIT_OFFSET_RANGE[1]);
+        loan = clamp(loan, LOAN_OFFSET_RANGE[0], LOAN_OFFSET_RANGE[1]);
+
+        dep = resolveConflict(dep, takenDep, DEPOSIT_OFFSET_RANGE);
+        loan = resolveConflict(loan, takenLoan, LOAN_OFFSET_RANGE);
+
+        takenDep.add(dep);
+        takenLoan.add(loan);
+
+        return {
+            ...bot,
+            strategyId: s.id,
+            strategyName: s.name,
+            depositOffset: dep,
+            loanOffset: loan,
+            isPlayer: false
+        };
+    });
+}
+
+function resolveConflict(rate, taken, range) {
+    if (!taken.has(rate)) return rate;
+    for (let off = RATE_STEP; off <= 8; off += RATE_STEP) {
+        const up = round05(rate + off);
+        if (up >= range[0] && up <= range[1] && !taken.has(up)) return up;
+        const down = round05(rate - off);
+        if (down >= range[0] && down <= range[1] && !taken.has(down)) return down;
+    }
+    return rate; // fallback (не должно случаться)
+}
+
+function buildPlayer() {
+    return {
+        id: 'player',
+        name: state.playerName,
+        color: 'player',
+        strategyId: 'player',
+        strategyName: 'Ваш банк',
+        depositOffset: state.depositOffset,
+        loanOffset: state.loanOffset,
+        isPlayer: true
+    };
+}
+
+function computeCycleResult() {
+    const player = buildPlayer();
+    const all = [player, ...state.bots];
+
+    // Депозиты: выше ставка — выше место (1-е, 2-е, 3-е, 4-е)
+    const depRanking = [...all].sort((a, b) =>
+        b.depositOffset - a.depositOffset || a.id.localeCompare(b.id)
+    );
+    // Кредиты: ниже ставка — выше место
+    const loanRanking = [...all].sort((a, b) =>
+        a.loanOffset - b.loanOffset || a.id.localeCompare(b.id)
+    );
+
+    const totalDepMarket = BASE_VOLUME * state.event.depositMul;
+    // Рынок не может занять больше, чем накоплено вкладов:
+    // суммарный спрос на кредиты ограничен суммарным объёмом депозитов.
+    const totalLoanMarket = Math.min(BASE_VOLUME * state.event.loanMul, totalDepMarket);
+
+    const banks = {};
+    all.forEach(b => {
+        banks[b.id] = {
+            bank: b,
+            depositRateAbs: state.keyRate + b.depositOffset,
+            loanRateAbs: state.keyRate + b.loanOffset,
+            depositOffset: b.depositOffset,
+            loanOffset: b.loanOffset
+        };
+    });
+
+    depRanking.forEach((b, idx) => {
+        banks[b.id].depositRank = idx + 1;
+        banks[b.id].depositVolume = totalDepMarket * SHARES[idx];
+    });
+    loanRanking.forEach((b, idx) => {
+        banks[b.id].loanRank = idx + 1;
+        banks[b.id].loanDemand = totalLoanMarket * SHARES[idx];
+    });
+
+    // Прибыль для каждого банка
+    Object.values(banks).forEach(r => {
+        // Ограничение V_l <= V_d: банк выдаёт кредитов не больше, чем привлёк
+        r.loanVolume = Math.min(r.loanDemand, r.depositVolume);
+        r.unutilized = r.depositVolume - r.loanVolume;
+
+        const loanIncome = r.loanVolume * (r.loanRateAbs / 100);
+        // Проценты по вкладам платятся со ВСЕГО объёма депозитов, даже непристроенных
+        const depCost = r.depositVolume * (r.depositRateAbs / 100);
+
+        r.loanIncome = loanIncome;
+        r.depositCost = depCost;
+        r.profit = loanIncome - depCost;
+        r.margin = r.loanRateAbs - r.depositRateAbs;
+    });
+
+    // Сортируем по прибыли для отображения ранга
+    const profitRanking = [...all]
+        .map(b => banks[b.id])
+        .sort((a, b) => b.profit - a.profit);
+    profitRanking.forEach((r, idx) => { r.profitRank = idx + 1; });
+
+    return banks;
+}
+
+/* ====================================================================
+   LEADERBOARD (localStorage)
+   ==================================================================== */
+
+function loadLB() {
+    try {
+        const raw = localStorage.getItem(LB_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) { return []; }
+}
+
+function saveLB(entries) {
+    try {
+        localStorage.setItem(LB_KEY, JSON.stringify(entries.slice(0, 10)));
+    } catch (e) { /* приват-режим — игнорируем */ }
+}
+
+function pushLB(entry) {
+    const list = loadLB();
+    list.push(entry);
+    list.sort((a, b) => b.profit - a.profit);
+    const trimmed = list.slice(0, 10);
+    saveLB(trimmed);
+    return trimmed;
+}
+
+/* ====================================================================
+   RENDER: TOPBAR + CYCLE STRIP
+   ==================================================================== */
+
+function topbarHTML() {
+    const showStats = state.screen !== 'start' && state.screen !== 'leaderboard';
+    if (!showStats) {
+        return `
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="topbar-brand"><span class="dot">●</span> БАНКИНГ</div>
+                <div class="topbar-tag">УПРАВЛЯЙ АКТИВАМИ И ПАССИВАМИ</div>
+            </div>
+            <div class="topbar-stats">
+                <div class="topbar-stat"><span class="topbar-stat-label">v.1.0</span></div>
+            </div>
+        </div>`;
+    }
+    const profitClass = state.totals.profit >= 0 ? 'pos' : 'neg';
+    return `
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="topbar-brand"><span class="dot">●</span> ${escapeHtml(state.playerName.toUpperCase())}</div>
+            <div class="topbar-tag">ROYAL BANK • TERMINAL</div>
+        </div>
+        <div class="topbar-stats">
+            <div class="topbar-stat"><span class="topbar-stat-label">ДЕНЬ</span><span class="topbar-stat-value">${state.currentCycle}/${state.cycles}</span></div>
+            <div class="topbar-stat"><span class="topbar-stat-label">КС</span><span class="topbar-stat-value">${fmtRate(state.keyRate)}</span></div>
+            <div class="topbar-stat"><span class="topbar-stat-label">P&amp;L</span><span class="topbar-stat-value ${profitClass}">${fmtSigned(state.totals.profit)}</span></div>
+        </div>
+    </div>`;
+}
+
+function cycleStripHTML() {
+    if (state.screen === 'start' || state.screen === 'leaderboard' || state.screen === 'final') return '';
+    let html = '<div class="cycle-strip">';
+    for (let i = 1; i <= state.cycles; i++) {
+        let cls = '';
+        if (i < state.currentCycle) cls = 'done';
+        else if (i === state.currentCycle) cls = 'active';
+        html += `<div class="cycle-tick ${cls}"></div>`;
+    }
+    html += '</div>';
+    return html;
+}
+
+/* ====================================================================
+   RENDER: START SCREEN
+   ==================================================================== */
+
+function renderStart() {
+    const lb = loadLB();
+    const lbItems = lb.slice(0, 5);
+
+    const lbBlock = lbItems.length === 0
+        ? `<div class="lb-mini-empty">Сыграйте первую партию,<br>чтобы открыть таблицу рекордов</div>`
+        : `<div class="lb-mini">
+            ${lbItems.map((e, i) => `
+                <div class="lb-mini-row ${i === 0 ? 'gold' : ''}">
+                    <div class="rank">#${i + 1}</div>
+                    <div class="name">${escapeHtml(e.name)} <span style="opacity:0.55; font-size:11px;">/ ${e.cycles}д.</span></div>
+                    <div class="pf">${fmtSigned(e.profit)}</div>
+                </div>
+            `).join('')}
+           </div>`;
+
+    return `
+    ${topbarHTML()}
+    <div class="start-hero fade-in">
+        <h1 class="start-title">
+            БАН<span class="red">К</span>ИНГ
+            <span class="slash">/</span>
+        </h1>
+        <p class="start-tagline">Симулятор управления активами и пассивами. Конкурируйте за рынок депозитов и кредитов с тремя банками-конкурентами.</p>
+    </div>
+    <div class="start-body fade-in">
+        <div class="start-panel">
+            <div class="label">Параметры</div>
+            <div class="input-row">
+                <input id="player-name" class="input" type="text" maxlength="20" placeholder="Название банка" value="${escapeHtml(state.playerName)}" />
+            </div>
+            <div class="label">Длительность сессии</div>
+            <div class="cycle-options" id="cycle-opts">
+                ${CYCLE_OPTIONS.map(c => `
+                    <div class="cycle-opt ${state.cycles === c ? 'selected' : ''}" data-cycles="${c}">
+                        <div class="cycle-opt-num">${c}</div>
+                        <div class="cycle-opt-label">${c === 5 ? 'спринт' : c === 10 ? 'стандарт' : 'марафон'}</div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="start-footer">
+                <button class="btn btn-primary" id="btn-start">Начать игру <span class="arrow">→</span></button>
+            </div>
+        </div>
+        <div class="start-panel">
+            <div class="label accent">Топ результатов</div>
+            ${lbBlock}
+            <div style="margin-top: 16px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; line-height: 1.6;">
+                <strong style="color: var(--fg);">Цель —</strong> накопить максимальную прибыль за выбранное число дней. Ставьте конкурентные ставки, чтобы захватить рынок, но не теряйте маржу.
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+function bindStart() {
+    $('#cycle-opts').addEventListener('click', (e) => {
+        const opt = e.target.closest('.cycle-opt');
+        if (!opt) return;
+        state.cycles = parseInt(opt.dataset.cycles, 10);
+        render();
+    });
+    $('#player-name').addEventListener('input', (e) => {
+        state.playerName = (e.target.value || '').trim().slice(0, 20) || 'Royal Bank';
+    });
+    $('#btn-start').addEventListener('click', () => {
+        // sync name from input even without blur
+        const v = ($('#player-name').value || '').trim().slice(0, 20);
+        state.playerName = v || 'Royal Bank';
+        startGame();
+    });
+}
+
+/* ====================================================================
+   GAME FLOW
+   ==================================================================== */
+
+function startGame() {
+    const cycles = state.cycles;
+    const name = state.playerName;
+    state = createState();
+    state.cycles = cycles;
+    state.playerName = name;
+    state.currentCycle = 1;
+    state.keyRate = rollKeyRate(10, true);
+    state.prevKeyRate = state.keyRate;
+    state.event = rollEvent();
+    state.screen = 'news';
+    render();
+}
+
+function startNextCycle() {
+    state.currentCycle += 1;
+    state.prevKeyRate = state.keyRate;
+    state.keyRate = rollKeyRate(state.prevKeyRate, false);
+    state.event = rollEvent();
+    state.cycleResult = null;
+    state.screen = 'news';
+    render();
+}
+
+/* ====================================================================
+   RENDER: NEWS SCREEN
+   ==================================================================== */
+
+function renderNews() {
+    const krDelta = state.currentCycle === 1 ? 0 : round05(state.keyRate - state.prevKeyRate);
+    const krDeltaClass = krDelta > 0 ? 'up' : krDelta < 0 ? 'down' : 'same';
+    const krDeltaIcon = krDelta > 0 ? '▲' : krDelta < 0 ? '▼' : '=';
+    const krDeltaText = state.currentCycle === 1
+        ? 'НАЧАЛО СЕССИИ'
+        : `${krDeltaIcon} ${Math.abs(krDelta).toFixed(1)} П.П. ОТ ВЧЕРА`;
+
+    const ev = state.event;
+    const depPct = Math.round((ev.depositMul - 1) * 100);
+    const loanPct = Math.round((ev.loanMul - 1) * 100);
+    const depCls = depPct > 0 ? 'pos' : depPct < 0 ? 'neg' : '';
+    const loanCls = loanPct > 0 ? 'pos' : loanPct < 0 ? 'neg' : '';
+
+    return `
+    ${topbarHTML()}
+    ${cycleStripHTML()}
+    <div class="content fade-in">
+        <div class="headline">
+            <div class="headline-meta">
+                <span><span class="day">ДЕНЬ ${state.currentCycle}</span> / ${state.cycles}</span>
+                <span>УТРЕННИЕ НОВОСТИ</span>
+            </div>
+            <div class="headline-title">Брифинг рынка</div>
+        </div>
+
+        <div class="news-grid">
+            <div class="news-rate">
+                <div class="news-rate-top">
+                    <div>
+                        <div class="label" style="margin-bottom:0;">Ключевая ставка</div>
+                    </div>
+                    <div class="news-rate-change ${krDeltaClass}">${krDeltaText}</div>
+                </div>
+                <div>
+                    <div class="news-rate-value">${state.keyRate.toFixed(1)}<span class="news-rate-unit">%</span></div>
+                </div>
+                <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em;">
+                    КОРИДОР ВКЛАДОВ: ${(state.keyRate - 4).toFixed(1)}–${state.keyRate.toFixed(1)}%<br>
+                    КОРИДОР КРЕДИТОВ: ${state.keyRate.toFixed(1)}–${(state.keyRate + 4).toFixed(1)}%
+                </div>
+            </div>
+            <div class="news-event">
+                <div>
+                    <div class="news-event-top">
+                        <div class="news-event-icon">${ev.icon}</div>
+                        <div class="news-event-title">${ev.title.toUpperCase()}</div>
+                    </div>
+                    <div class="news-event-desc">${ev.desc}</div>
+                </div>
+                <div class="news-event-impact">
+                    <div class="impact-cell">
+                        <div class="impact-label">Объём депозитов</div>
+                        <div class="impact-value ${depCls}">${fmtSigned(depPct)}%</div>
+                    </div>
+                    <div class="impact-cell">
+                        <div class="impact-label">Объём кредитов</div>
+                        <div class="impact-value ${loanCls}">${fmtSigned(loanPct)}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" id="btn-news-go" style="width: 100%;">Начать рабочий день <span class="arrow">→</span></button>
+        </div>
+    </div>
+    `;
+}
+
+function bindNews() {
+    $('#btn-news-go').addEventListener('click', () => {
+        // По умолчанию ставки равны КС ЦБ — игроку нужно их развести,
+        // чтобы маржа стала положительной.
+        if (state.currentCycle === 1 || state.depositOffset === undefined) {
+            state.depositOffset = 0.0;
+            state.loanOffset = 0.0;
+        }
+        state.screen = 'preparation';
+        render();
+    });
+}
+
+/* ====================================================================
+   RENDER: PREPARATION SCREEN
+   ==================================================================== */
+
+function calcForecast() {
+    // Делаем grubый прогноз: считаем потенциальный диапазон прибыли на основании
+    // текущей маржи (без учёта реакции ботов)
+    const depAbs = state.keyRate + state.depositOffset;
+    const loanAbs = state.keyRate + state.loanOffset;
+    const margin = loanAbs - depAbs;
+
+    // Ожидаемая доля рынка в среднем = 25% (1 из 4); прибыль зависит от объёма и маржи
+    const totalDepMarket = BASE_VOLUME * state.event.depositMul;
+    const totalLoanMarket = Math.min(BASE_VOLUME * state.event.loanMul, totalDepMarket);
+    const expectedDep = totalDepMarket * 0.25;
+    const expectedLoan = totalLoanMarket * 0.25;
+    const usable = Math.min(expectedDep, expectedLoan);
+    const estProfit = usable * (loanAbs / 100) - expectedDep * (depAbs / 100);
+
+    return { margin, estProfit, depAbs, loanAbs };
+}
+
+function renderPreparation() {
+    const f = calcForecast();
+    const depMin = DEPOSIT_OFFSET_RANGE[0], depMax = DEPOSIT_OFFSET_RANGE[1];
+    const loanMin = LOAN_OFFSET_RANGE[0], loanMax = LOAN_OFFSET_RANGE[1];
+
+    // нормированное положение бара (0..100)
+    const depFill = ((state.depositOffset - depMin) / (depMax - depMin)) * 100;
+    const loanFill = ((state.loanOffset - loanMin) / (loanMax - loanMin)) * 100;
+
+    const profitCls = f.estProfit >= 0 ? 'pos' : 'neg';
+    const marginCls = f.margin >= 2 ? 'pos' : f.margin <= 1 ? 'neg' : '';
+
+    return `
+    ${topbarHTML()}
+    ${cycleStripHTML()}
+    <div class="content fade-in">
+        <div class="headline">
+            <div class="headline-meta">
+                <span><span class="day">ДЕНЬ ${state.currentCycle}</span> / ${state.cycles}</span>
+                <span>ПОДГОТОВКА К ОТКРЫТИЮ</span>
+            </div>
+            <div class="headline-title">Установите ставки на день</div>
+        </div>
+
+        <div class="prep-grid">
+            <div class="rate-control deposit">
+                <div class="rate-control-head">
+                    <div class="rate-control-title">Вклады</div>
+                    <div class="rate-control-range">КС${depMin >= 0 ? '+' : ''}${depMin.toFixed(0)}% — КС</div>
+                </div>
+                <div class="rate-display">
+                    <button class="rate-btn" data-act="dep-down" ${state.depositOffset <= depMin ? 'disabled' : ''}>−</button>
+                    <div class="rate-value">${(state.keyRate + state.depositOffset).toFixed(1)}<span class="rate-value-unit">%</span></div>
+                    <button class="rate-btn" data-act="dep-up" ${state.depositOffset >= depMax ? 'disabled' : ''}>+</button>
+                </div>
+                <div class="rate-meta">КС <strong>${fmtRateSigned(state.depositOffset)}</strong> п.п.</div>
+                <div class="rate-bar"><div class="rate-bar-fill" style="width: ${depFill}%"></div></div>
+            </div>
+
+            <div class="rate-control loan">
+                <div class="rate-control-head">
+                    <div class="rate-control-title">Кредиты</div>
+                    <div class="rate-control-range">КС — КС+${loanMax.toFixed(0)}%</div>
+                </div>
+                <div class="rate-display">
+                    <button class="rate-btn" data-act="loan-down" ${state.loanOffset <= loanMin ? 'disabled' : ''}>−</button>
+                    <div class="rate-value">${(state.keyRate + state.loanOffset).toFixed(1)}<span class="rate-value-unit">%</span></div>
+                    <button class="rate-btn" data-act="loan-up" ${state.loanOffset >= loanMax ? 'disabled' : ''}>+</button>
+                </div>
+                <div class="rate-meta">КС <strong>${fmtRateSigned(state.loanOffset)}</strong> п.п.</div>
+                <div class="rate-bar"><div class="rate-bar-fill" style="width: ${loanFill}%"></div></div>
+            </div>
+        </div>
+
+        <div class="forecast">
+            <div class="forecast-cell">
+                <div class="forecast-label">Маржа</div>
+                <div class="forecast-value ${marginCls}">${f.margin.toFixed(1)} п.п.</div>
+            </div>
+            <div class="forecast-cell">
+                <div class="forecast-label">Ставка вклада</div>
+                <div class="forecast-value">${f.depAbs.toFixed(1)}%</div>
+            </div>
+            <div class="forecast-cell">
+                <div class="forecast-label">Ставка кредита</div>
+                <div class="forecast-value">${f.loanAbs.toFixed(1)}%</div>
+            </div>
+        </div>
+
+        <div class="hint">
+            <div class="hint-icon">?</div>
+            <div>
+                <strong>Как это работает.</strong> Высокая ставка по вкладу делает вас привлекательнее для вкладчиков и даёт большую долю рынка (40% — 30% — 20% — 10%). Низкая ставка по кредиту привлекает заёмщиков. Но широкая маржа важнее объёма: <strong>если депозитов больше, чем выданных кредитов, банк всё равно платит проценты по всему объёму вкладов.</strong> Шаг изменения — 0.5 п.п.
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-ghost" id="btn-back">← Назад</button>
+            <button class="btn btn-primary" id="btn-open-doors" ${f.margin <= 0 ? 'disabled' : ''}>Открыть двери банка <span class="arrow">→</span></button>
+        </div>
+        ${f.margin <= 0 ? `
+        <div class="margin-warning">
+            <span class="margin-warning-icon">!</span>
+            <span>Маржа должна быть положительной. Поднимите ставку по кредитам выше ставки по вкладам, чтобы открыть банк.</span>
+        </div>` : ''}
+    </div>
+    `;
+}
+
+function bindPreparation() {
+    document.querySelectorAll('.rate-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const act = btn.dataset.act;
+            if (act === 'dep-up') state.depositOffset = round05(clamp(state.depositOffset + RATE_STEP, DEPOSIT_OFFSET_RANGE[0], DEPOSIT_OFFSET_RANGE[1]));
+            if (act === 'dep-down') state.depositOffset = round05(clamp(state.depositOffset - RATE_STEP, DEPOSIT_OFFSET_RANGE[0], DEPOSIT_OFFSET_RANGE[1]));
+            if (act === 'loan-up') state.loanOffset = round05(clamp(state.loanOffset + RATE_STEP, LOAN_OFFSET_RANGE[0], LOAN_OFFSET_RANGE[1]));
+            if (act === 'loan-down') state.loanOffset = round05(clamp(state.loanOffset - RATE_STEP, LOAN_OFFSET_RANGE[0], LOAN_OFFSET_RANGE[1]));
+            render();
+        });
+    });
+    $('#btn-back').addEventListener('click', () => {
+        state.screen = 'news';
+        render();
+    });
+    $('#btn-open-doors').addEventListener('click', () => {
+        // Жёсткая защита: без положительной маржи день не запускается.
+        const margin = state.loanOffset - state.depositOffset;
+        if (margin <= 0) return;
+        // генерим ботов и считаем результат
+        state.bots = rollBots(state.depositOffset, state.loanOffset);
+        state.cycleResult = computeCycleResult();
+        state.animationDone = false;
+        state.screen = 'working';
+        render();
+    });
+}
+
+/* ====================================================================
+   RENDER: WORKING DAY
+   ==================================================================== */
+
+function renderWorkingDay() {
+    const result = state.cycleResult;
+    const all = [buildPlayer(), ...state.bots];
+
+    // Единая шкала для вкладов и кредитов: депозит на 500 должен быть длиннее кредита на 300.
+    const maxValue = Math.max(
+        ...all.map(b => Math.max(result[b.id].depositVolume, result[b.id].loanVolume))
+    ) || 1;
+    const maxDep = maxValue;
+    const maxLoan = maxValue;
+
+    const rowsHTML = all.map(b => {
+        const r = result[b.id];
+        const colorKey = b.isPlayer ? 'player' : b.color;
+        return `
+        <div class="bank-row ${b.isPlayer ? 'player' : ''}" data-color="${colorKey}" data-bank="${b.id}">
+            <div class="bank-id">
+                <div class="bank-marker ${colorKey}"></div>
+                <div class="bank-id-text">
+                    <div class="bank-name">${escapeHtml(b.name)}${b.isPlayer ? '<span class="you">[ВЫ]</span>' : ''}</div>
+                    <div class="bank-strategy">${b.isPlayer ? 'Стратегия игрока' : escapeHtml(b.strategyName)}</div>
+                </div>
+            </div>
+            <div class="metric-block">
+                <div class="metric-head">
+                    <div class="metric-rate">Вклады <strong>${r.depositRateAbs.toFixed(1)}%</strong></div>
+                    <div class="metric-vol" data-vol="dep" data-target="${r.depositVolume}">0</div>
+                </div>
+                <div class="metric-rank">${r.depositRank}-е место по привлекательности продукта</div>
+                <div class="progress"><div class="progress-fill deposit-fill" data-fill="dep" data-target="${(r.depositVolume / maxDep) * 100}"></div></div>
+            </div>
+            <div class="metric-block">
+                <div class="metric-head">
+                    <div class="metric-rate">Кредиты <strong>${r.loanRateAbs.toFixed(1)}%</strong></div>
+                    <div class="metric-vol" data-vol="loan" data-target="${r.loanVolume}">0</div>
+                </div>
+                <div class="metric-rank">${r.loanRank}-е место по привлекательности продукта</div>
+                <div class="progress"><div class="progress-fill loan-fill" data-fill="loan" data-target="${maxLoan > 0 ? (r.loanVolume / maxLoan) * 100 : 0}"></div></div>
+            </div>
+            <div class="bank-profit-cell">
+                <div class="bank-profit-label">ПРИБЫЛЬ</div>
+                <div class="bank-profit hidden" data-profit data-target="${r.profit}">—</div>
+            </div>
+        </div>
+        `;
+    }).join('');
+
+    // Сводка дня (для игрока)
+    const player = result['player'];
+
+    return `
+    ${topbarHTML()}
+    ${cycleStripHTML()}
+    <div class="content fade-in">
+        <div class="headline">
+            <div class="headline-meta">
+                <span><span class="day">ДЕНЬ ${state.currentCycle}</span> / ${state.cycles}</span>
+                <span>ОПЕРАЦИОННЫЙ ДЕНЬ</span>
+            </div>
+            <div class="headline-title">Банки открыли двери</div>
+        </div>
+
+        <div class="work-status" id="work-status">
+            <div class="work-status-left">
+                <div class="work-status-dot"></div>
+                <span>Работа в процессе</span>
+            </div>
+            <div class="work-status-phase" id="work-phase">ПРИЁМ ВКЛАДОВ…</div>
+        </div>
+
+        <div class="banks-table">
+            <div class="banks-thead">
+                <div>Банк</div>
+                <div>Депозиты</div>
+                <div>Кредиты</div>
+                <div class="right">Прибыль</div>
+            </div>
+            ${rowsHTML}
+        </div>
+
+        <div class="work-summary" id="work-summary" style="opacity: 0; transition: opacity 0.5s;">
+            <div class="work-summary-cell">
+                <div class="work-summary-label">Привлечено</div>
+                <div class="work-summary-value">${fmt(player.depositVolume)} млн</div>
+            </div>
+            <div class="work-summary-cell">
+                <div class="work-summary-label">Выдано</div>
+                <div class="work-summary-value">${fmt(player.loanVolume)} млн</div>
+            </div>
+            <div class="work-summary-cell">
+                <div class="work-summary-label">Не пристроено</div>
+                <div class="work-summary-value">${fmt(player.unutilized)} млн</div>
+            </div>
+            <div class="work-summary-cell">
+                <div class="work-summary-label">Прибыль за день</div>
+                <div class="work-summary-value ${player.profit >= 0 ? 'pos' : 'neg'}">${fmtSigned(player.profit)} млн</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" id="btn-close-day" style="width:100%;" disabled>
+                <span id="btn-close-text">Идёт работа…</span>
+            </button>
+        </div>
+    </div>
+    `;
+}
+
+function animateValue(el, target, duration) {
+    const start = parseFloat(el.dataset.current || '0');
+    const startTime = performance.now();
+    const step = (now) => {
+        const t = Math.min(1, (now - startTime) / duration);
+        // easeOutCubic
+        const eased = 1 - Math.pow(1 - t, 3);
+        const v = start + (target - start) * eased;
+        el.textContent = fmt(v) + ' ';
+        if (t < 1) requestAnimationFrame(step);
+        else { el.textContent = fmt(target); el.dataset.current = String(target); }
+    };
+    requestAnimationFrame(step);
+}
+
+function bindWorkingDay() {
+    // Sequence:
+    // 0.0s   Start: progress fills for deposits
+    // 0.0s - 4.5s: deposit volumes count up
+    // 4.5s   Switch phase to "Выдача кредитов"
+    // 4.5s - 9.0s: loan volumes count up + loan progress fills
+    // 9.0s - 9.5s: profit reveal
+    // 9.5s   button enabled
+
+    const phaseEl = $('#work-phase');
+    const btn = $('#btn-close-day');
+    const btnText = $('#btn-close-text');
+    const summary = $('#work-summary');
+
+    // Start deposits immediately
+    document.querySelectorAll('[data-fill="dep"]').forEach(el => {
+        const t = parseFloat(el.dataset.target);
+        // small delay for stagger
+        const idx = Array.from(el.closest('.banks-table').querySelectorAll('[data-fill="dep"]')).indexOf(el);
+        const dly = setTimeout(() => { el.style.width = t + '%'; }, 100 + idx * 80);
+        state.animationTimers.push(dly);
+    });
+    document.querySelectorAll('[data-vol="dep"]').forEach(el => {
+        const target = parseFloat(el.dataset.target);
+        animateValue(el, target, 4000);
+    });
+
+    // After 4.5s, switch to loans
+    const t1 = setTimeout(() => {
+        phaseEl.textContent = 'ВЫДАЧА КРЕДИТОВ…';
+        document.querySelectorAll('[data-fill="loan"]').forEach((el, idx) => {
+            const t = parseFloat(el.dataset.target);
+            const dly = setTimeout(() => { el.style.width = t + '%'; }, idx * 80);
+            state.animationTimers.push(dly);
+        });
+        document.querySelectorAll('[data-vol="loan"]').forEach(el => {
+            const target = parseFloat(el.dataset.target);
+            animateValue(el, target, 4000);
+        });
+    }, 4500);
+    state.animationTimers.push(t1);
+
+    // After 9.0s, reveal profits
+    const t2 = setTimeout(() => {
+        phaseEl.textContent = 'РАСЧЁТ ПРИБЫЛИ';
+        const result = state.cycleResult;
+        // Сортируем по прибыли — для значка лидера
+        const profitRanking = Object.values(result)
+            .sort((a, b) => b.profit - a.profit);
+        const rankMap = {};
+        profitRanking.forEach((r, i) => { rankMap[r.bank.id] = i + 1; });
+
+        document.querySelectorAll('[data-profit]').forEach(el => {
+            const target = parseFloat(el.dataset.target);
+            const row = el.closest('.bank-row');
+            const bankId = row.dataset.bank;
+            row.dataset.rank = rankMap[bankId];
+            el.classList.remove('hidden');
+            el.classList.add(target >= 0 ? 'pos' : 'neg');
+            // Animate from 0 to target
+            const startTime = performance.now();
+            const animate = (now) => {
+                const t = Math.min(1, (now - startTime) / 800);
+                const eased = 1 - Math.pow(1 - t, 3);
+                const v = target * eased;
+                el.textContent = fmtSigned(v);
+                if (t < 1) requestAnimationFrame(animate);
+                else el.textContent = fmtSigned(target);
+            };
+            requestAnimationFrame(animate);
+        });
+        summary.style.opacity = '1';
+    }, 9000);
+    state.animationTimers.push(t2);
+
+    // Enable button at 9.8s
+    const t3 = setTimeout(() => {
+        btn.disabled = false;
+        const isLast = state.currentCycle >= state.cycles;
+        btnText.textContent = isLast ? 'Закрыть сезон →' : 'Закрыть операционный день →';
+        state.animationDone = true;
+        // Подсвечиваем что готово и убираем индикатор «работа в процессе»
+        const status = $('#work-status');
+        status.style.background = 'var(--positive)';
+        status.classList.add('done');
+        phaseEl.textContent = 'ДЕНЬ ЗАКРЫТ';
+    }, 9800);
+    state.animationTimers.push(t3);
+
+    btn.addEventListener('click', () => {
+        if (!state.animationDone) return;
+        finalizeCycle();
+    });
+}
+
+function finalizeCycle() {
+    clearTimers();
+    const player = state.cycleResult['player'];
+    state.totals.profit += player.profit;
+    state.totals.depositVol += player.depositVolume;
+    state.totals.loanVol += player.loanVolume;
+    state.totals.marginSum += player.margin;
+    state.totals.marginCount += 1;
+
+    state.history.push({
+        cycle: state.currentCycle,
+        keyRate: state.keyRate,
+        event: state.event.id,
+        eventTitle: state.event.title,
+        depositOffset: state.depositOffset,
+        loanOffset: state.loanOffset,
+        depositRateAbs: player.depositRateAbs,
+        loanRateAbs: player.loanRateAbs,
+        depositVolume: player.depositVolume,
+        loanVolume: player.loanVolume,
+        profit: player.profit,
+        depositRank: player.depositRank,
+        loanRank: player.loanRank,
+        bots: state.bots.map(b => ({ ...b, profit: state.cycleResult[b.id].profit }))
+    });
+
+    if (state.currentCycle >= state.cycles) {
+        // Сохраняем результат в LB
+        pushLB({
+            name: state.playerName,
+            profit: Math.round(state.totals.profit),
+            cycles: state.cycles,
+            date: new Date().toISOString().slice(0, 10)
+        });
+        state.screen = 'final';
+        render();
+    } else {
+        startNextCycle();
+    }
+}
+
+/* ====================================================================
+   RENDER: FINAL
+   ==================================================================== */
+
+function renderFinal() {
+    const t = state.totals;
+    const avgMargin = t.marginCount > 0 ? (t.marginSum / t.marginCount) : 0;
+    const profitClass = t.profit >= 0 ? 'pos' : 'neg';
+
+    // Лучший и худший день
+    const bestDay = state.history.reduce((b, h) => !b || h.profit > b.profit ? h : b, null);
+    const worstDay = state.history.reduce((b, h) => !b || h.profit < b.profit ? h : b, null);
+
+    // Таблица истории
+    const histRows = state.history.map(h => `
+        <tr>
+            <td>${h.cycle}</td>
+            <td>${fmtRate(h.keyRate)}</td>
+            <td>${escapeHtml(h.eventTitle)}</td>
+            <td>${h.depositRateAbs.toFixed(1)}%</td>
+            <td>${h.loanRateAbs.toFixed(1)}%</td>
+            <td>${fmt(h.depositVolume)}</td>
+            <td>${fmt(h.loanVolume)}</td>
+            <td class="${h.profit >= 0 ? 'pos' : 'neg'}">${fmtSigned(h.profit)}</td>
+        </tr>
+    `).join('');
+
+    // Лидерборд
+    const lb = loadLB();
+    const myEntryIdx = lb.findIndex(e => e.name === state.playerName && e.profit === Math.round(t.profit));
+    const lbRows = lb.length === 0
+        ? `<div style="padding: 24px; text-align:center; color: var(--muted);">Пусто</div>`
+        : lb.map((e, i) => {
+            const medal = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+            const isMe = i === myEntryIdx;
+            return `
+            <div class="lb-row ${isMe ? 'you' : ''}">
+                <div class="rank-num ${medal}">#${i + 1}</div>
+                <div>${escapeHtml(e.name)}${isMe ? ' <span style="color:var(--player)">← ВЫ</span>' : ''}</div>
+                <div class="pf-amount ${e.profit >= 0 ? 'pos' : 'neg'}">${fmtSigned(e.profit)}</div>
+                <div class="pf-cycles">${e.cycles} дн.</div>
+                <div class="pf-date">${e.date ? formatLBDate(e.date) : '—'}</div>
+            </div>
+            `;
+        }).join('');
+
+    return `
+    ${topbarHTML()}
+    <div class="final-hero fade-in">
+        <div class="final-hero-title">Сезон завершён • ${state.cycles} дней</div>
+        <div class="final-hero-value ${profitClass}">${fmtSigned(t.profit)}</div>
+        <div class="final-hero-sub">МЛН РУБ. — Накопленная прибыль</div>
+    </div>
+
+    <div class="stats-grid fade-in">
+        <div class="stat-cell">
+            <div class="stat-cell-label">Привлечено вкладов</div>
+            <div class="stat-cell-value">${fmt(t.depositVol)}</div>
+            <div class="stat-cell-sub">млн руб. за сезон</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-cell-label">Выдано кредитов</div>
+            <div class="stat-cell-value">${fmt(t.loanVol)}</div>
+            <div class="stat-cell-sub">млн руб. за сезон</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-cell-label">Средняя маржа</div>
+            <div class="stat-cell-value">${avgMargin.toFixed(2)}</div>
+            <div class="stat-cell-sub">п.п. за день</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-cell-label">Лучший день</div>
+            <div class="stat-cell-value ${bestDay && bestDay.profit >= 0 ? 'pos' : 'neg'}">${bestDay ? fmtSigned(bestDay.profit) : '—'}</div>
+            <div class="stat-cell-sub">день №${bestDay ? bestDay.cycle : '—'}</div>
+        </div>
+    </div>
+
+    <div class="final-section fade-in">
+        <h2>История сезона</h2>
+        <div style="overflow-x: auto;">
+            <table class="dt">
+                <thead>
+                    <tr>
+                        <th>Д</th>
+                        <th>КС</th>
+                        <th>Событие</th>
+                        <th>Вкл. ст.</th>
+                        <th>Кред. ст.</th>
+                        <th>Привл.</th>
+                        <th>Выд.</th>
+                        <th>P&amp;L</th>
+                    </tr>
+                </thead>
+                <tbody>${histRows}</tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="final-section fade-in">
+        <h2>Топ-10 рекордов</h2>
+        <div class="lb">
+            <div class="lb-row head">
+                <div>МЕСТО</div>
+                <div>БАНК</div>
+                <div style="text-align:right;">ПРИБЫЛЬ</div>
+                <div style="text-align:right;">ДНЕЙ</div>
+                <div style="text-align:right;">ДАТА</div>
+            </div>
+            ${lbRows}
+        </div>
+    </div>
+
+    <div class="final-section fade-in" style="display:flex; gap: 8px;">
+        <button class="btn btn-ghost" id="btn-restart-back" style="flex: 0 0 auto;">← На главную</button>
+        <button class="btn btn-primary" id="btn-restart" style="flex: 1;">Начать заново <span class="arrow">↻</span></button>
+    </div>
+    `;
+}
+
+function bindFinal() {
+    $('#btn-restart').addEventListener('click', () => {
+        const cycles = state.cycles;
+        const name = state.playerName;
+        state = createState();
+        state.cycles = cycles;
+        state.playerName = name;
+        startGame();
+    });
+    $('#btn-restart-back').addEventListener('click', () => {
+        const cycles = state.cycles;
+        const name = state.playerName;
+        state = createState();
+        state.cycles = cycles;
+        state.playerName = name;
+        render();
+    });
+}
+
+/* ====================================================================
+   MAIN RENDER DISPATCH
+   ==================================================================== */
+
+function render() {
+    clearTimers();
+    const app = $('#app');
+    if (state.screen === 'start') {
+        app.innerHTML = renderStart();
+        bindStart();
+    } else if (state.screen === 'news') {
+        app.innerHTML = renderNews();
+        bindNews();
+    } else if (state.screen === 'preparation') {
+        app.innerHTML = renderPreparation();
+        bindPreparation();
+    } else if (state.screen === 'working') {
+        app.innerHTML = renderWorkingDay();
+        bindWorkingDay();
+    } else if (state.screen === 'final') {
+        app.innerHTML = renderFinal();
+        bindFinal();
+    }
+    // Прокрутка наверх между экранами
+    window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+// Запуск
+render();
+</script>
+</body>
+</html>
